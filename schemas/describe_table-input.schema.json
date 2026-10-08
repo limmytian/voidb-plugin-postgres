@@ -1,0 +1,18 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "description": "Optional schema override. Defaults to public.",
+      "minLength": 1,
+      "type": "string"
+    },
+    "table": {
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "table"
+  ],
+  "type": "object"
+}
