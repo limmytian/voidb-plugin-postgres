@@ -28,6 +28,13 @@ pub use connection::PostgresConnectionProvider;
 // Re-export service layer for external consumers
 pub use service::{PostgresCommand, PostgresEvent, PostgresService};
 
+pub async fn test_connection(config: &PostgresConfig) -> Result<String, String> {
+    service::PostgresService::new_direct(config)
+        .await
+        .map(|_| format!("connected to {}:{}", config.host, config.port))
+        .map_err(|e| e.to_string())
+}
+
 pub struct PostgresAdapter {
     client: Arc<Mutex<Client>>,
     connection_id: String,

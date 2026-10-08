@@ -63,7 +63,7 @@ impl CliPlugin for PostgresCliPlugin {
                 ),
             Command::new("describe")
                 .about("Describe table schema")
-                .arg(conn_arg)
+                .arg(conn_arg.clone())
                 .arg(
                     Arg::new("schema")
                         .short('s')
@@ -72,6 +72,9 @@ impl CliPlugin for PostgresCliPlugin {
                         .help("Schema name"),
                 )
                 .arg(Arg::new("table").required(true).help("Table name")),
+            Command::new("test")
+                .about("Test connection to PostgreSQL database")
+                .arg(conn_arg),
         ]
     }
 
@@ -86,6 +89,7 @@ impl CliPlugin for PostgresCliPlugin {
             "databases" => self.handle_databases(matches, ctx).await,
             "tables" => self.handle_tables(matches, ctx).await,
             "describe" => self.handle_describe(matches, ctx).await,
+            "test" => self.handle_test(matches, ctx).await,
             _ => Err(VoidbError::Plugin(format!("Unknown command: {}", command))),
         }
     }
@@ -320,5 +324,23 @@ impl PostgresCliPlugin {
         }
 
         Ok(())
+    }
+
+    async fn handle_test(
+        &self,
+        matches: &ArgMatches,
+        ctx: &CliContext,
+    ) -> Result<(), VoidbError> {
+        let conn_name = matches.get_one::<String>("connection").unwrap();
+        match self.create_service(conn_name, ctx).await {
+            Ok(_) => {
+                println!("OK: Connected successfully to PostgreSQL database");
+                Ok(())
+            }
+            Err(e) => {
+                println!("FAIL: {}", e);
+                Err(e)
+            }
+        }
     }
 }
