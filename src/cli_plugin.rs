@@ -74,7 +74,13 @@ impl CliPlugin for PostgresCliPlugin {
                 .arg(Arg::new("table").required(true).help("Table name")),
             Command::new("test")
                 .about("Test connection to PostgreSQL database")
-                .arg(conn_arg),
+                .arg(conn_arg.required(false))
+                .arg(
+                    Arg::new("stdin-config")
+                        .long("stdin-config")
+                        .action(clap::ArgAction::SetTrue)
+                        .help("Read connection configuration JSON from stdin"),
+                ),
         ]
     }
 
@@ -101,9 +107,18 @@ impl PostgresCliPlugin {
         conn_name: &str,
         ctx: &CliContext,
     ) -> Result<PostgresService, VoidbError> {
-        let config = ctx.find_connection(conn_name).ok_or_else(|| {
-            VoidbError::Plugin(format!("Connection '{}' not found", conn_name))
-        })?;
+        let config = if let Some(config) = ctx.find_connection(conn_name) {
+            config.clone()
+        } else if let Ok((_profile, config)) =
+            ctx.resolve_profile_connection(conn_name, Some("postgres"))
+        {
+            config
+        } else {
+            return Err(VoidbError::Plugin(format!(
+                "Connection or profile '{}' not found",
+                conn_name
+            )));
+        };
 
         let pid = config.effective_plugin_id();
         if pid != "postgres" && pid != "postgresql" {
@@ -331,16 +346,42 @@ impl PostgresCliPlugin {
         matches: &ArgMatches,
         ctx: &CliContext,
     ) -> Result<(), VoidbError> {
-        let conn_name = matches.get_one::<String>("connection").unwrap();
-        match self.create_service(conn_name, ctx).await {
-            Ok(_) => {
-                println!("OK: Connected successfully to PostgreSQL database");
-                Ok(())
+        if matches.get_flag("stdin-config") {
+            use std::io::Read;
+            let mut input = String::new();
+            std::io::stdin()
+                .read_to_string(&mut input)
+                .map_err(|e| VoidbError::Config(format!("Failed to read stdin: {}", e)))?;
+            let val: serde_json::Value = serde_json::from_str(&input)
+                .map_err(|e| VoidbError::Config(format!("Invalid JSON on stdin: {}", e)))?;
+            let plugin_val = val.get("plugin_config").unwrap_or(&val);
+            let pg_config: PostgresConfig = serde_json::from_value(plugin_val.clone())
+                .map_err(|e| VoidbError::Config(format!("Invalid PostgreSQL config: {}", e)))?;
+            match PostgresService::new_direct(&pg_config).await {
+                Ok(_) => {
+                    println!("OK: Connected successfully to PostgreSQL database");
+                    Ok(())
+                }
+                Err(e) => {
+                    println!("FAIL: {}", e);
+                    Err(VoidbError::Connection(e))
+                }
             }
-            Err(e) => {
-                println!("FAIL: {}", e);
-                Err(e)
+        } else if let Some(conn_name) = matches.get_one::<String>("connection") {
+            match self.create_service(conn_name, ctx).await {
+                Ok(_) => {
+                    println!("OK: Connected successfully to PostgreSQL database");
+                    Ok(())
+                }
+                Err(e) => {
+                    println!("FAIL: {}", e);
+                    Err(e)
+                }
             }
+        } else {
+            Err(VoidbError::Plugin(
+                "Either --connection or --stdin-config is required".into(),
+            ))
         }
     }
 }

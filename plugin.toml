@@ -1,6 +1,6 @@
 id = "postgres"
 name = "PostgreSQL Database Plugin"
-version = "0.3.1"
+version = "0.3.3"
 protocol_version = "1"
 description = "PostgreSQL relational database process plugin for VoidB."
 license = "Apache-2.0"
