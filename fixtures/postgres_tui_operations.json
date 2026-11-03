@@ -1,0 +1,222 @@
+{
+  "profile_label": "fixture-postgres-ops",
+  "server_label": "fixture-postgres-local",
+  "database": "fixturedb",
+  "status": "fixture postgres operations ready",
+  "target_error": "target error: permission denied for schema finance (fixture triage lock active)",
+  "error_tables": ["public.payments"],
+  "error_message": "target error: permission denied for table public.payments (fixture)",
+  "schemas": ["public", "analytics"],
+  "tables": [
+    {
+      "schema": "public",
+      "name": "orders",
+      "table_type": "BASE TABLE",
+      "row_estimate": 23,
+      "columns": [
+        { "name": "order_id", "data_type": "integer", "nullable": false, "is_primary_key": true, "default_value": "nextval('orders_order_id_seq'::regclass)" },
+        { "name": "customer_id", "data_type": "integer", "nullable": false, "is_primary_key": false, "default_value": null },
+        { "name": "total_usd", "data_type": "numeric", "nullable": false, "is_primary_key": false, "default_value": null },
+        { "name": "status", "data_type": "text", "nullable": false, "is_primary_key": false, "default_value": "'pending'::text" },
+        { "name": "created_at", "data_type": "timestamp without time zone", "nullable": true, "is_primary_key": false, "default_value": "now()" }
+      ],
+      "rows": [
+        [1, 101, 129.5, "shipped", "2026-10-30 08:15:00"],
+        [2, 102, 89.0, "pending", "2026-10-30 09:02:00"],
+        [3, 101, 432.25, "shipped", "2026-10-30 11:47:00"],
+        [4, 103, 15.0, "cancelled", "2026-10-31 07:10:00"],
+        [5, 104, 279.9, "shipped", "2026-10-31 10:05:00"],
+        [6, 102, 61.35, "pending", "2026-10-31 13:22:00"],
+        [7, 105, 1200.0, "shipped", "2026-11-01 09:00:00"],
+        [8, 101, 74.2, "pending", "2026-11-01 10:30:00"],
+        [9, 106, 319.99, "shipped", "2026-11-01 14:45:00"],
+        [10, 104, 42.0, "shipped", "2026-11-01 16:20:00"],
+        [11, 107, 899.0, "pending", "2026-11-02 08:05:00"],
+        [12, 102, 233.1, "shipped", "2026-11-02 09:40:00"],
+        [13, 105, 58.75, "cancelled", "2026-11-02 11:12:00"],
+        [14, 101, 410.4, "shipped", "2026-11-02 12:58:00"],
+        [15, 108, 99.95, "pending", "2026-11-02 14:03:00"],
+        [16, 103, 745.0, "shipped", "2026-11-02 15:31:00"],
+        [17, 106, 27.5, "pending", "2026-11-02 17:44:00"],
+        [18, 104, 512.6, "shipped", "2026-11-03 08:22:00"],
+        [19, 107, 64.0, "pending", "2026-11-03 09:55:00"],
+        [20, 102, 189.45, "shipped", "2026-11-03 11:08:00"],
+        [21, 109, 930.0, "pending", "2026-11-03 13:40:00"],
+        [22, 101, 78.2, "shipped", "2026-11-03 15:02:00"],
+        [23, 110, 221.75, "pending", null]
+      ],
+      "structure": {
+        "columns": [
+          { "name": "order_id", "data_type": "integer", "nullable": false, "is_primary_key": true, "default_value": "nextval('orders_order_id_seq'::regclass)" },
+          { "name": "customer_id", "data_type": "integer", "nullable": false, "is_primary_key": false, "default_value": null },
+          { "name": "total_usd", "data_type": "numeric", "nullable": false, "is_primary_key": false, "default_value": null },
+          { "name": "status", "data_type": "text", "nullable": false, "is_primary_key": false, "default_value": "'pending'::text" },
+          { "name": "created_at", "data_type": "timestamp without time zone", "nullable": true, "is_primary_key": false, "default_value": "now()" }
+        ],
+        "indexes": [
+          { "name": "orders_pkey", "columns": ["order_id"], "is_unique": true, "index_type": "btree" },
+          { "name": "orders_created_at_idx", "columns": ["created_at"], "is_unique": false, "index_type": "btree" },
+          { "name": "orders_status_idx", "columns": ["status", "created_at"], "is_unique": false, "index_type": "btree" }
+        ],
+        "foreign_keys": [
+          {
+            "name": "orders_customer_fk",
+            "columns": ["customer_id"],
+            "referenced_table": "customers",
+            "referenced_columns": ["customer_id"],
+            "on_update": "CASCADE",
+            "on_delete": "RESTRICT"
+          }
+        ]
+      }
+    },
+    {
+      "schema": "public",
+      "name": "products",
+      "table_type": "BASE TABLE",
+      "row_estimate": 12,
+      "columns": [
+        { "name": "sku", "data_type": "text", "nullable": false, "is_primary_key": true, "default_value": null },
+        { "name": "name", "data_type": "text", "nullable": false, "is_primary_key": false, "default_value": null },
+        { "name": "tags", "data_type": "text[]", "nullable": true, "is_primary_key": false, "default_value": null },
+        { "name": "attributes", "data_type": "jsonb", "nullable": true, "is_primary_key": false, "default_value": null },
+        { "name": "active", "data_type": "boolean", "nullable": false, "is_primary_key": false, "default_value": "true" },
+        { "name": "last_review", "data_type": "uuid", "nullable": true, "is_primary_key": false, "default_value": null }
+      ],
+      "rows": [
+        ["WIDG-0042", "Telemetry Widget", ["hardware", "sensor"], { "color": "graphite", "weight_kg": 1.4 }, true, "6f9619ff-8b86-d011-b42d-00c04fc964ff"],
+        ["WIDG-0043", "Telemetry Widget Mk II", ["hardware", "sensor", "outdoor"], { "color": "graphite", "weight_kg": 1.6, "ip_rating": "ip67" }, true, null],
+        ["GADG-0001", "Fixture Gadget", ["gadget"], { "battery_hours": 12 }, false, "a5b1c2d3-e4f5-0671-8a9b-c0d1e2f3a4b5"],
+        ["GADG-0002", "Fixture Gadget Pro", ["gadget", "pro"], null, true, null],
+        ["CABL-0100", "Patch Cable 2m", ["accessory"], { "length_m": 2, "color": "blue" }, true, "b7c8d9e0-f1a2-4356-87b9-c0d1e2f3a4c6"],
+        ["CABL-0101", "Patch Cable 5m", ["accessory"], { "length_m": 5, "color": "yellow" }, true, null],
+        ["MNT-0200", "Rack Mount Kit", ["accessory", "rack"], { "u_height": 1 }, true, "c1d2e3f4-a5b6-4789-abcd-0123456789ef"],
+        ["MNT-0201", "Wall Mount Bracket", null, { "material": "steel" }, false, null],
+        ["KIT-0300", "Starter Kit", ["kit", "starter"], { "contents": ["base", "cable", "mount"] }, true, "d4e5f6a7-b8c9-4a01-b234-56789abcdef0"],
+        ["KIT-0301", "Expansion Kit", ["kit"], { "contents": ["module-a", "module-b"] }, true, null],
+        ["SNS-0400", "Temp Sensor", ["sensor"], { "range_c": [-20, 85] }, true, null],
+        ["SNS-0401", "Humidity Sensor", ["sensor"], null, false, "e5f6a7b8-c9d0-4e12-f345-6789abcdef01"]
+      ],
+      "structure": {
+        "columns": [
+          { "name": "sku", "data_type": "text", "nullable": false, "is_primary_key": true, "default_value": null },
+          { "name": "name", "data_type": "text", "nullable": false, "is_primary_key": false, "default_value": null },
+          { "name": "tags", "data_type": "text[]", "nullable": true, "is_primary_key": false, "default_value": null },
+          { "name": "attributes", "data_type": "jsonb", "nullable": true, "is_primary_key": false, "default_value": null },
+          { "name": "active", "data_type": "boolean", "nullable": false, "is_primary_key": false, "default_value": "true" },
+          { "name": "last_review", "data_type": "uuid", "nullable": true, "is_primary_key": false, "default_value": null }
+        ],
+        "indexes": [
+          { "name": "products_pkey", "columns": ["sku"], "is_unique": true, "index_type": "btree" },
+          { "name": "products_tags_idx", "columns": ["tags"], "is_unique": false, "index_type": "gin" }
+        ],
+        "foreign_keys": []
+      }
+    },
+    {
+      "schema": "public",
+      "name": "customers",
+      "table_type": "BASE TABLE",
+      "row_estimate": 4,
+      "columns": [
+        { "name": "customer_id", "data_type": "integer", "nullable": false, "is_primary_key": true, "default_value": "nextval('customers_customer_id_seq'::regclass)" },
+        { "name": "email", "data_type": "text", "nullable": false, "is_primary_key": false, "default_value": null },
+        { "name": "region", "data_type": "text", "nullable": true, "is_primary_key": false, "default_value": null },
+        { "name": "notes", "data_type": "text", "nullable": true, "is_primary_key": false, "default_value": null }
+      ],
+      "rows": [
+        [101, "ops-101@fixture.local", "eu-west", "priority triage account"],
+        [102, "ops-102@fixture.local", "us-east", null],
+        [103, "ops-103@fixture.local", null, null],
+        [104, "ops-104@fixture.local", "us-east", "billing hold"]
+      ],
+      "structure": {
+        "columns": [
+          { "name": "customer_id", "data_type": "integer", "nullable": false, "is_primary_key": true, "default_value": "nextval('customers_customer_id_seq'::regclass)" },
+          { "name": "email", "data_type": "text", "nullable": false, "is_primary_key": false, "default_value": null },
+          { "name": "region", "data_type": "text", "nullable": true, "is_primary_key": false, "default_value": null },
+          { "name": "notes", "data_type": "text", "nullable": true, "is_primary_key": false, "default_value": null }
+        ],
+        "indexes": [
+          { "name": "customers_pkey", "columns": ["customer_id"], "is_unique": true, "index_type": "btree" },
+          { "name": "customers_email_key", "columns": ["email"], "is_unique": true, "index_type": "btree" }
+        ],
+        "foreign_keys": []
+      }
+    },
+    {
+      "schema": "public",
+      "name": "payments",
+      "table_type": "BASE TABLE",
+      "row_estimate": 8,
+      "columns": [
+        { "name": "payment_id", "data_type": "integer", "nullable": false, "is_primary_key": true, "default_value": null },
+        { "name": "order_id", "data_type": "integer", "nullable": false, "is_primary_key": false, "default_value": null },
+        { "name": "amount_usd", "data_type": "numeric", "nullable": false, "is_primary_key": false, "default_value": null },
+        { "name": "charged_at", "data_type": "timestamp without time zone", "nullable": true, "is_primary_key": false, "default_value": null }
+      ],
+      "rows": []
+    },
+    {
+      "schema": "public",
+      "name": "audit_events",
+      "table_type": "BASE TABLE",
+      "row_estimate": 0,
+      "columns": [
+        { "name": "audit_id", "data_type": "integer", "nullable": false, "is_primary_key": true, "default_value": null },
+        { "name": "actor", "data_type": "text", "nullable": false, "is_primary_key": false, "default_value": null },
+        { "name": "action", "data_type": "text", "nullable": false, "is_primary_key": false, "default_value": null },
+        { "name": "payload", "data_type": "jsonb", "nullable": true, "is_primary_key": false, "default_value": null }
+      ],
+      "rows": [],
+      "structure": {
+        "columns": [
+          { "name": "audit_id", "data_type": "integer", "nullable": false, "is_primary_key": true, "default_value": null },
+          { "name": "actor", "data_type": "text", "nullable": false, "is_primary_key": false, "default_value": null },
+          { "name": "action", "data_type": "text", "nullable": false, "is_primary_key": false, "default_value": null },
+          { "name": "payload", "data_type": "jsonb", "nullable": true, "is_primary_key": false, "default_value": null }
+        ],
+        "indexes": [
+          { "name": "audit_events_pkey", "columns": ["audit_id"], "is_unique": true, "index_type": "btree" }
+        ],
+        "foreign_keys": []
+      }
+    },
+    {
+      "schema": "analytics",
+      "name": "sessions",
+      "table_type": "BASE TABLE",
+      "row_estimate": 5,
+      "columns": [
+        { "name": "session_id", "data_type": "uuid", "nullable": false, "is_primary_key": true, "default_value": null },
+        { "name": "user_ref", "data_type": "text", "nullable": false, "is_primary_key": false, "default_value": null },
+        { "name": "started_at", "data_type": "timestamp with time zone", "nullable": true, "is_primary_key": false, "default_value": null },
+        { "name": "flags", "data_type": "jsonb", "nullable": true, "is_primary_key": false, "default_value": null },
+        { "name": "referer", "data_type": "text", "nullable": true, "is_primary_key": false, "default_value": null }
+      ],
+      "rows": [
+        ["0a1b2c3d-4e5f-4a67-8b90-cdef01234567", "user-42", "2026-11-03 08:01:00+00", { "channel": "web", "retries": 0 }, "https://fixture.local/start"],
+        ["1b2c3d4e-5f6a-4b78-9c01-def012345678", "user-42", "2026-11-03 09:15:00+00", { "channel": "ios", "retries": 2 }, null],
+        ["2c3d4e5f-6a7b-4c89-ad12-ef0123456789", "user-77", "2026-11-03 10:44:00+00", { "channel": "web", "retries": 1, "ab_bucket": "b" }, "https://fixture.local/promo"],
+        ["3d4e5f6a-7b8c-4d90-be23-f01234567890", "user-15", "2026-11-03 12:30:00+00", null, null],
+        ["4e5f6a7b-8c9d-4e01-cf34-012345678901", "user-15", "2026-11-03 14:05:00+00", { "channel": "android", "retries": 0 }, "https://fixture.local/start"]
+      ]
+    },
+    {
+      "schema": "analytics",
+      "name": "daily_rollups",
+      "table_type": "VIEW",
+      "row_estimate": null,
+      "columns": [
+        { "name": "day", "data_type": "date", "nullable": false, "is_primary_key": false, "default_value": null },
+        { "name": "orders", "data_type": "integer", "nullable": false, "is_primary_key": false, "default_value": null },
+        { "name": "revenue_usd", "data_type": "numeric", "nullable": true, "is_primary_key": false, "default_value": null }
+      ],
+      "rows": [
+        ["2026-11-01", 5, 1837.94],
+        ["2026-11-02", 8, 2485.3],
+        ["2026-11-03", 6, 1970.0]
+      ]
+    }
+  ]
+}

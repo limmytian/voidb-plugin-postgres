@@ -4,6 +4,7 @@ mod cli_plugin;
 mod config;
 mod connection;
 pub mod service;
+pub mod tui;
 
 use std::sync::Arc;
 use std::time::Instant;
@@ -13,15 +14,15 @@ use tokio::sync::Mutex;
 use tokio_postgres::{Client, NoTls};
 
 use voidb_core::connection::{ConnectionConfig, DatabaseType};
-use voidb_core::database::types::*;
 use voidb_core::database::DatabaseAdapter;
+use voidb_core::database::types::*;
 use voidb_core::error::VoidbError;
 use voidb_core::plugin::NativePlugin;
 use voidb_core::plugin::native::CreateAdapterFuture;
 
-pub use cli_plugin::create_postgres_cli_plugin;
-pub use capabilities::{invoke_postgres_capability, postgres_capabilities};
 pub use agent_session::PostgresAgentSessionFactory;
+pub use capabilities::{invoke_postgres_capability, postgres_capabilities};
+pub use cli_plugin::create_postgres_cli_plugin;
 pub use config::PostgresConfig;
 pub use connection::PostgresConnectionProvider;
 
@@ -45,12 +46,14 @@ impl PostgresAdapter {
         use crate::config::PostgresConfig;
 
         // Read configuration from plugin_config
-        let postgres_config: PostgresConfig = config.plugin_config
+        let postgres_config: PostgresConfig = config
+            .plugin_config
             .as_ref()
             .ok_or_else(|| VoidbError::Connection("Missing plugin_config".to_string()))
             .and_then(|pc| {
-                serde_json::from_value(pc.clone())
-                    .map_err(|e| VoidbError::Connection(format!("Invalid PostgreSQL config: {}", e)))
+                serde_json::from_value(pc.clone()).map_err(|e| {
+                    VoidbError::Connection(format!("Invalid PostgreSQL config: {}", e))
+                })
             })?;
 
         Ok(postgres_config.to_connection_string())
@@ -66,68 +69,94 @@ impl PostgresAdapter {
         let col_type = row.columns()[idx].type_();
 
         match *col_type {
-            Type::BOOL => row.try_get::<_, Option<bool>>(idx)
-                .ok().flatten()
+            Type::BOOL => row
+                .try_get::<_, Option<bool>>(idx)
+                .ok()
+                .flatten()
                 .map(CellValue::Bool)
                 .unwrap_or(CellValue::Null),
 
-            Type::INT2 => row.try_get::<_, Option<i16>>(idx)
-                .ok().flatten()
+            Type::INT2 => row
+                .try_get::<_, Option<i16>>(idx)
+                .ok()
+                .flatten()
                 .map(|v| CellValue::Int(v as i64))
                 .unwrap_or(CellValue::Null),
 
-            Type::INT4 | Type::OID => row.try_get::<_, Option<i32>>(idx)
-                .ok().flatten()
+            Type::INT4 | Type::OID => row
+                .try_get::<_, Option<i32>>(idx)
+                .ok()
+                .flatten()
                 .map(|v| CellValue::Int(v as i64))
                 .unwrap_or(CellValue::Null),
 
-            Type::INT8 => row.try_get::<_, Option<i64>>(idx)
-                .ok().flatten()
+            Type::INT8 => row
+                .try_get::<_, Option<i64>>(idx)
+                .ok()
+                .flatten()
                 .map(CellValue::Int)
                 .unwrap_or(CellValue::Null),
 
-            Type::FLOAT4 => row.try_get::<_, Option<f32>>(idx)
-                .ok().flatten()
+            Type::FLOAT4 => row
+                .try_get::<_, Option<f32>>(idx)
+                .ok()
+                .flatten()
                 .map(|v| CellValue::Float(v as f64))
                 .unwrap_or(CellValue::Null),
 
-            Type::FLOAT8 | Type::NUMERIC => row.try_get::<_, Option<f64>>(idx)
-                .ok().flatten()
+            Type::FLOAT8 | Type::NUMERIC => row
+                .try_get::<_, Option<f64>>(idx)
+                .ok()
+                .flatten()
                 .map(CellValue::Float)
                 .unwrap_or(CellValue::Null),
 
-            Type::JSON | Type::JSONB => row.try_get::<_, Option<serde_json::Value>>(idx)
-                .ok().flatten()
+            Type::JSON | Type::JSONB => row
+                .try_get::<_, Option<serde_json::Value>>(idx)
+                .ok()
+                .flatten()
                 .map(|v| CellValue::Json(v.to_string()))
                 .unwrap_or(CellValue::Null),
 
-            Type::UUID => row.try_get::<_, Option<uuid::Uuid>>(idx)
-                .ok().flatten()
+            Type::UUID => row
+                .try_get::<_, Option<uuid::Uuid>>(idx)
+                .ok()
+                .flatten()
                 .map(|v| CellValue::Uuid(v.to_string()))
                 .unwrap_or(CellValue::Null),
 
-            Type::TIMESTAMPTZ | Type::TIMESTAMP => row.try_get::<_, Option<chrono::NaiveDateTime>>(idx)
-                .ok().flatten()
+            Type::TIMESTAMPTZ | Type::TIMESTAMP => row
+                .try_get::<_, Option<chrono::NaiveDateTime>>(idx)
+                .ok()
+                .flatten()
                 .map(|v| CellValue::DateTime(v.format("%Y-%m-%d %H:%M:%S").to_string()))
                 .unwrap_or(CellValue::Null),
 
-            Type::DATE => row.try_get::<_, Option<chrono::NaiveDate>>(idx)
-                .ok().flatten()
+            Type::DATE => row
+                .try_get::<_, Option<chrono::NaiveDate>>(idx)
+                .ok()
+                .flatten()
                 .map(|v| CellValue::Date(v.format("%Y-%m-%d").to_string()))
                 .unwrap_or(CellValue::Null),
 
-            Type::TIME | Type::TIMETZ => row.try_get::<_, Option<chrono::NaiveTime>>(idx)
-                .ok().flatten()
+            Type::TIME | Type::TIMETZ => row
+                .try_get::<_, Option<chrono::NaiveTime>>(idx)
+                .ok()
+                .flatten()
                 .map(|v| CellValue::Time(v.format("%H:%M:%S").to_string()))
                 .unwrap_or(CellValue::Null),
 
-            Type::BYTEA => row.try_get::<_, Option<Vec<u8>>>(idx)
-                .ok().flatten()
+            Type::BYTEA => row
+                .try_get::<_, Option<Vec<u8>>>(idx)
+                .ok()
+                .flatten()
                 .map(CellValue::Blob)
                 .unwrap_or(CellValue::Null),
 
-            _ => row.try_get::<_, Option<String>>(idx)
-                .ok().flatten()
+            _ => row
+                .try_get::<_, Option<String>>(idx)
+                .ok()
+                .flatten()
                 .map(CellValue::Text)
                 .unwrap_or(CellValue::Null),
         }
@@ -157,7 +186,10 @@ impl DatabaseAdapter for PostgresAdapter {
 
     async fn ping(&self) -> Result<(), VoidbError> {
         let client = self.client.lock().await;
-        client.simple_query("SELECT 1").await.map_err(Self::map_err)?;
+        client
+            .simple_query("SELECT 1")
+            .await
+            .map_err(Self::map_err)?;
         Ok(())
     }
 
@@ -208,7 +240,11 @@ impl DatabaseAdapter for PostgresAdapter {
                 name: r.get::<_, String>(0),
                 table_type: r.get::<_, String>(1),
                 comment: r.try_get::<_, Option<String>>(2).ok().flatten(),
-                row_count: r.try_get::<_, Option<i64>>(3).ok().flatten().map(|v| v as u64),
+                row_count: r
+                    .try_get::<_, Option<i64>>(3)
+                    .ok()
+                    .flatten()
+                    .map(|v| v as u64),
             })
             .collect())
     }
@@ -235,11 +271,7 @@ impl DatabaseAdapter for PostgresAdapter {
             .collect())
     }
 
-    async fn describe_table(
-        &self,
-        schema: &str,
-        table: &str,
-    ) -> Result<TableSchema, VoidbError> {
+    async fn describe_table(&self, schema: &str, table: &str) -> Result<TableSchema, VoidbError> {
         let client = self.client.lock().await;
         let rows = client
             .query(
@@ -275,7 +307,11 @@ impl DatabaseAdapter for PostgresAdapter {
                     nullable: nullable_str == "YES",
                     is_primary_key: key == "PRI",
                     default_value: r.try_get::<_, Option<String>>(3).ok().flatten(),
-                    max_length: r.try_get::<_, Option<i32>>(4).ok().flatten().map(|v| v as u64),
+                    max_length: r
+                        .try_get::<_, Option<i32>>(4)
+                        .ok()
+                        .flatten()
+                        .map(|v| v as u64),
                     extra: String::new(),
                 }
             })
@@ -295,11 +331,7 @@ impl DatabaseAdapter for PostgresAdapter {
         })
     }
 
-    async fn list_indexes(
-        &self,
-        schema: &str,
-        table: &str,
-    ) -> Result<Vec<IndexInfo>, VoidbError> {
+    async fn list_indexes(&self, schema: &str, table: &str) -> Result<Vec<IndexInfo>, VoidbError> {
         let client = self.client.lock().await;
         let rows = client
             .query(
@@ -388,14 +420,16 @@ impl DatabaseAdapter for PostgresAdapter {
             let update_rule: String = row.get(4);
             let delete_rule: String = row.get(5);
 
-            let fk = fks.entry(fk_name.clone()).or_insert_with(|| ForeignKeyInfo {
-                name: fk_name,
-                columns: Vec::new(),
-                referenced_table: ref_table,
-                referenced_columns: Vec::new(),
-                on_update: update_rule,
-                on_delete: delete_rule,
-            });
+            let fk = fks
+                .entry(fk_name.clone())
+                .or_insert_with(|| ForeignKeyInfo {
+                    name: fk_name,
+                    columns: Vec::new(),
+                    referenced_table: ref_table,
+                    referenced_columns: Vec::new(),
+                    on_update: update_rule,
+                    on_delete: delete_rule,
+                });
             fk.columns.push(col_name);
             fk.referenced_columns.push(ref_col);
         }
@@ -439,7 +473,10 @@ impl DatabaseAdapter for PostgresAdapter {
             && !s.is_empty()
         {
             client
-                .execute(&format!("SET search_path TO {}", self.quote_identifier(s)), &[])
+                .execute(
+                    &format!("SET search_path TO {}", self.quote_identifier(s)),
+                    &[],
+                )
                 .await
                 .map_err(Self::map_err)?;
         }
@@ -516,11 +553,7 @@ impl DatabaseAdapter for PostgresAdapter {
         Ok(count as u64)
     }
 
-    async fn get_create_table_sql(
-        &self,
-        _schema: &str,
-        table: &str,
-    ) -> Result<String, VoidbError> {
+    async fn get_create_table_sql(&self, _schema: &str, table: &str) -> Result<String, VoidbError> {
         Err(VoidbError::Other(format!(
             "PostgreSQL does not have SHOW CREATE TABLE. Use pg_dump for '{}'.",
             table
