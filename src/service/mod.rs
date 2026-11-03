@@ -160,7 +160,10 @@ impl PostgresService {
     /// Returns `Some(event)` if available, `None` otherwise.
     /// Non-blocking, suitable for calling from `Plugin::update()`.
     pub fn poll_event(&mut self) -> Option<PostgresEvent> {
-        if let ServiceMode::Channel { ref mut event_rx, .. } = self.mode {
+        if let ServiceMode::Channel {
+            ref mut event_rx, ..
+        } = self.mode
+        {
             event_rx.try_recv().ok()
         } else {
             None
@@ -204,7 +207,9 @@ impl PostgresService {
     /// List columns of a table (direct mode).
     pub async fn list_columns(&self, schema: &str, table: &str) -> anyhow::Result<Vec<ColumnInfo>> {
         match &self.mode {
-            ServiceMode::Direct { client, .. } => SchemaService::list_columns(client, schema, table).await,
+            ServiceMode::Direct { client, .. } => {
+                SchemaService::list_columns(client, schema, table).await
+            }
             _ => Err(anyhow::anyhow!("list_columns requires direct mode")),
         }
     }
@@ -212,15 +217,23 @@ impl PostgresService {
     /// List indexes of a table (direct mode).
     pub async fn list_indexes(&self, schema: &str, table: &str) -> anyhow::Result<Vec<IndexInfo>> {
         match &self.mode {
-            ServiceMode::Direct { client, .. } => SchemaService::list_indexes(client, schema, table).await,
+            ServiceMode::Direct { client, .. } => {
+                SchemaService::list_indexes(client, schema, table).await
+            }
             _ => Err(anyhow::anyhow!("list_indexes requires direct mode")),
         }
     }
 
     /// List foreign keys of a table (direct mode).
-    pub async fn list_foreign_keys(&self, schema: &str, table: &str) -> anyhow::Result<Vec<ForeignKeyInfo>> {
+    pub async fn list_foreign_keys(
+        &self,
+        schema: &str,
+        table: &str,
+    ) -> anyhow::Result<Vec<ForeignKeyInfo>> {
         match &self.mode {
-            ServiceMode::Direct { client, .. } => SchemaService::list_foreign_keys(client, schema, table).await,
+            ServiceMode::Direct { client, .. } => {
+                SchemaService::list_foreign_keys(client, schema, table).await
+            }
             _ => Err(anyhow::anyhow!("list_foreign_keys requires direct mode")),
         }
     }
@@ -228,15 +241,23 @@ impl PostgresService {
     /// Show CREATE TABLE DDL (direct mode).
     pub async fn show_create_table(&self, schema: &str, table: &str) -> anyhow::Result<String> {
         match &self.mode {
-            ServiceMode::Direct { client, .. } => SchemaService::show_create_table(client, schema, table).await,
+            ServiceMode::Direct { client, .. } => {
+                SchemaService::show_create_table(client, schema, table).await
+            }
             _ => Err(anyhow::anyhow!("show_create_table requires direct mode")),
         }
     }
 
     /// Load table structure: columns, indexes, foreign keys (direct mode).
-    pub async fn describe_table(&self, schema: &str, table: &str) -> anyhow::Result<(Vec<ColumnInfo>, Vec<IndexInfo>, Vec<ForeignKeyInfo>)> {
+    pub async fn describe_table(
+        &self,
+        schema: &str,
+        table: &str,
+    ) -> anyhow::Result<(Vec<ColumnInfo>, Vec<IndexInfo>, Vec<ForeignKeyInfo>)> {
         match &self.mode {
-            ServiceMode::Direct { client, .. } => SchemaService::load_structure(client, schema, table).await,
+            ServiceMode::Direct { client, .. } => {
+                SchemaService::load_structure(client, schema, table).await
+            }
             _ => Err(anyhow::anyhow!("describe_table requires direct mode")),
         }
     }
@@ -244,7 +265,9 @@ impl PostgresService {
     /// Execute a SQL query, returning statement results (direct mode).
     pub async fn execute_query(&self, sql: &str) -> anyhow::Result<Vec<StatementResult>> {
         match &self.mode {
-            ServiceMode::Direct { client, .. } => CrudService::execute_multi_query(client, sql).await,
+            ServiceMode::Direct { client, .. } => {
+                CrudService::execute_multi_query(client, sql).await
+            }
             _ => Err(anyhow::anyhow!("execute_query requires direct mode")),
         }
     }
@@ -381,8 +404,10 @@ impl PostgresService {
             SchemaCommand::ListTables { schema } => {
                 match SchemaService::list_tables(client, &schema).await {
                     Ok(tables) => {
-                        let _ = event_tx
-                            .send(PostgresEvent::Schema(SchemaEvent::Tables { schema, tables }));
+                        let _ = event_tx.send(PostgresEvent::Schema(SchemaEvent::Tables {
+                            schema,
+                            tables,
+                        }));
                     }
                     Err(e) => {
                         let _ = event_tx.send(PostgresEvent::Error(e.to_string()));
@@ -439,12 +464,11 @@ impl PostgresService {
             SchemaCommand::ShowCreateTable { schema, table } => {
                 match SchemaService::show_create_table(client, &schema, &table).await {
                     Ok(ddl) => {
-                        let _ =
-                            event_tx.send(PostgresEvent::Schema(SchemaEvent::CreateTableDdl {
-                                schema,
-                                table,
-                                ddl,
-                            }));
+                        let _ = event_tx.send(PostgresEvent::Schema(SchemaEvent::CreateTableDdl {
+                            schema,
+                            table,
+                            ddl,
+                        }));
                     }
                     Err(e) => {
                         let _ = event_tx.send(PostgresEvent::Error(e.to_string()));
@@ -513,9 +537,8 @@ impl PostgresService {
                                 }
                             }
                         } else {
-                            let _ = event_tx.send(PostgresEvent::Crud(
-                                CrudEvent::MultiQueryResult { results },
-                            ));
+                            let _ = event_tx
+                                .send(PostgresEvent::Crud(CrudEvent::MultiQueryResult { results }));
                         }
                     }
                     Err(e) => {
@@ -558,8 +581,9 @@ impl PostgresService {
                 .await
                 {
                     Ok(affected_rows) => {
-                        let _ = event_tx
-                            .send(PostgresEvent::Crud(CrudEvent::ChangesSaved { affected_rows }));
+                        let _ = event_tx.send(PostgresEvent::Crud(CrudEvent::ChangesSaved {
+                            affected_rows,
+                        }));
                     }
                     Err(e) => {
                         let _ = event_tx.send(PostgresEvent::Error(e.to_string()));
@@ -572,17 +596,14 @@ impl PostgresService {
                 table,
                 columns,
                 values,
-            } => {
-                match CrudService::insert_row(client, &schema, &table, &columns, &values).await {
-                    Ok(new_row) => {
-                        let _ = event_tx
-                            .send(PostgresEvent::Crud(CrudEvent::RowInserted { new_row }));
-                    }
-                    Err(e) => {
-                        let _ = event_tx.send(PostgresEvent::Error(e.to_string()));
-                    }
+            } => match CrudService::insert_row(client, &schema, &table, &columns, &values).await {
+                Ok(new_row) => {
+                    let _ = event_tx.send(PostgresEvent::Crud(CrudEvent::RowInserted { new_row }));
                 }
-            }
+                Err(e) => {
+                    let _ = event_tx.send(PostgresEvent::Error(e.to_string()));
+                }
+            },
         }
         let _ = tabs.request_render();
     }
@@ -621,8 +642,8 @@ impl PostgresService {
             LoadCommand::LoadRowCount { schema, table } => {
                 match DataLoaderService::load_row_count(client, &schema, &table).await {
                     Ok(count) => {
-                        let _ = event_tx
-                            .send(PostgresEvent::Load(LoadEvent::RowCountLoaded { count }));
+                        let _ =
+                            event_tx.send(PostgresEvent::Load(LoadEvent::RowCountLoaded { count }));
                     }
                     Err(e) => {
                         let _ = event_tx.send(PostgresEvent::Error(e.to_string()));
@@ -633,8 +654,9 @@ impl PostgresService {
             LoadCommand::LoadPrimaryKeys { schema, table } => {
                 match DataLoaderService::load_primary_keys(client, &schema, &table).await {
                     Ok(pk_cols) => {
-                        let _ = event_tx
-                            .send(PostgresEvent::Load(LoadEvent::PrimaryKeysLoaded { pk_cols }));
+                        let _ = event_tx.send(PostgresEvent::Load(LoadEvent::PrimaryKeysLoaded {
+                            pk_cols,
+                        }));
                     }
                     Err(e) => {
                         let _ = event_tx.send(PostgresEvent::Error(e.to_string()));

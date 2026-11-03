@@ -30,10 +30,7 @@ use crate::config::PostgresConfig;
 /// Returns an error string if the connection cannot be established.
 pub async fn create_connection(config: &PostgresConfig) -> Result<Client, String> {
     let conn_str = config.to_connection_string();
-    let ssl_mode = config
-        .ssl_mode
-        .as_deref()
-        .unwrap_or("disable");
+    let ssl_mode = config.ssl_mode.as_deref().unwrap_or("disable");
 
     // Log only host:port, never the connection string (T-03-01)
     tracing::info!(

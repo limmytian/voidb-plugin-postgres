@@ -13,7 +13,9 @@ use tokio_postgres::Client;
 use voidb_core::{CellValue, ColumnInfo, Row};
 
 use super::events::StatementResult;
-use super::value_convert::{build_pk_where, convert_row, escape_pg_value, extract_columns, quote_ident};
+use super::value_convert::{
+    build_pk_where, convert_row, escape_pg_value, extract_columns, quote_ident,
+};
 
 /// Inner service for CRUD operations.
 ///
@@ -55,10 +57,7 @@ impl CrudService {
     /// Execute multiple SQL statements sequentially on a single connection.
     ///
     /// Returns one `StatementResult` per statement. Stops on first error.
-    pub async fn execute_multi_query(
-        client: &Client,
-        sql: &str,
-    ) -> Result<Vec<StatementResult>> {
+    pub async fn execute_multi_query(client: &Client, sql: &str) -> Result<Vec<StatementResult>> {
         let stmts = voidb_core::sql_split::split_statements(sql);
         if stmts.is_empty() {
             return Ok(vec![]);
@@ -148,7 +147,11 @@ impl CrudService {
             let set_parts: Vec<String> = changes
                 .iter()
                 .map(|(col, val)| {
-                    format!("{} = {}", quote_ident(&columns[*col].name), escape_pg_value(val))
+                    format!(
+                        "{} = {}",
+                        quote_ident(&columns[*col].name),
+                        escape_pg_value(val)
+                    )
                 })
                 .collect();
             let sql = format!(

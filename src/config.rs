@@ -21,7 +21,13 @@ pub struct PostgresConfig {
 }
 
 impl PostgresConfig {
-    pub fn new(host: String, port: u16, username: String, password: String, database: String) -> Self {
+    pub fn new(
+        host: String,
+        port: u16,
+        username: String,
+        password: String,
+        database: String,
+    ) -> Self {
         Self {
             host,
             port,

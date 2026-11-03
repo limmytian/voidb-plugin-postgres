@@ -14,8 +14,8 @@ use tokio::sync::mpsc;
 use tokio_postgres::Client;
 
 use voidb_core::{
-    CellValue, ColumnInfo, DatabaseClipboard, DatabaseDialect, Row, TabManager,
-    TableClipboard, TableSchema, VoidbClipboard,
+    CellValue, ColumnInfo, DatabaseClipboard, DatabaseDialect, Row, TabManager, TableClipboard,
+    TableSchema, VoidbClipboard,
 };
 
 use super::commands::{BrowserCommand, TableCopyData};
@@ -58,24 +58,23 @@ impl BrowserService {
                 }
             }
 
-            BrowserCommand::DropSchema { name } => {
-                match self.drop_schema(client, &name).await {
-                    Ok(()) => {
-                        let _ = event_tx
-                            .send(PostgresEvent::Browser(BrowserEvent::SchemaDropped { name }));
-                    }
-                    Err(e) => {
-                        let _ = event_tx.send(PostgresEvent::Error(e));
-                    }
+            BrowserCommand::DropSchema { name } => match self.drop_schema(client, &name).await {
+                Ok(()) => {
+                    let _ =
+                        event_tx.send(PostgresEvent::Browser(BrowserEvent::SchemaDropped { name }));
                 }
-            }
+                Err(e) => {
+                    let _ = event_tx.send(PostgresEvent::Error(e));
+                }
+            },
 
             BrowserCommand::DropTable { schema, table } => {
                 match self.drop_table(client, &schema, &table).await {
                     Ok(()) => {
-                        let _ = event_tx.send(PostgresEvent::Browser(
-                            BrowserEvent::TableDropped { schema, table },
-                        ));
+                        let _ = event_tx.send(PostgresEvent::Browser(BrowserEvent::TableDropped {
+                            schema,
+                            table,
+                        }));
                     }
                     Err(e) => {
                         let _ = event_tx.send(PostgresEvent::Error(e));
@@ -87,22 +86,18 @@ impl BrowserService {
                 schema,
                 table,
                 new_name,
-            } => {
-                match self.rename_table(client, &schema, &table, &new_name).await {
-                    Ok(()) => {
-                        let _ = event_tx.send(PostgresEvent::Browser(
-                            BrowserEvent::TableRenamed {
-                                schema,
-                                old_name: table,
-                                new_name,
-                            },
-                        ));
-                    }
-                    Err(e) => {
-                        let _ = event_tx.send(PostgresEvent::Error(e));
-                    }
+            } => match self.rename_table(client, &schema, &table, &new_name).await {
+                Ok(()) => {
+                    let _ = event_tx.send(PostgresEvent::Browser(BrowserEvent::TableRenamed {
+                        schema,
+                        old_name: table,
+                        new_name,
+                    }));
                 }
-            }
+                Err(e) => {
+                    let _ = event_tx.send(PostgresEvent::Error(e));
+                }
+            },
 
             BrowserCommand::DuplicateTable {
                 schema,
@@ -114,13 +109,12 @@ impl BrowserService {
                     .await
                 {
                     Ok(()) => {
-                        let _ = event_tx.send(PostgresEvent::Browser(
-                            BrowserEvent::TableDuplicated {
+                        let _ =
+                            event_tx.send(PostgresEvent::Browser(BrowserEvent::TableDuplicated {
                                 schema,
                                 source: table,
                                 target: new_name,
-                            },
-                        ));
+                            }));
                     }
                     Err(e) => {
                         let _ = event_tx.send(PostgresEvent::Error(e));
@@ -139,8 +133,7 @@ impl BrowserService {
                     .await
                 {
                     Ok(()) => {
-                        let _ = event_tx
-                            .send(PostgresEvent::Browser(BrowserEvent::CopyTablesDone));
+                        let _ = event_tx.send(PostgresEvent::Browser(BrowserEvent::CopyTablesDone));
                     }
                     Err(e) => {
                         let _ = event_tx.send(PostgresEvent::Error(e));
@@ -158,8 +151,7 @@ impl BrowserService {
                     .await
                 {
                     Ok(()) => {
-                        let _ = event_tx
-                            .send(PostgresEvent::Browser(BrowserEvent::CopyTablesDone));
+                        let _ = event_tx.send(PostgresEvent::Browser(BrowserEvent::CopyTablesDone));
                     }
                     Err(e) => {
                         let _ = event_tx.send(PostgresEvent::Error(e));
@@ -176,8 +168,8 @@ impl BrowserService {
                     .await
                 {
                     Ok(()) => {
-                        let _ = event_tx
-                            .send(PostgresEvent::Browser(BrowserEvent::PasteTablesDone));
+                        let _ =
+                            event_tx.send(PostgresEvent::Browser(BrowserEvent::PasteTablesDone));
                     }
                     Err(e) => {
                         let _ = event_tx.send(PostgresEvent::Error(e));
@@ -192,18 +184,12 @@ impl BrowserService {
                 with_data,
             } => {
                 match self
-                    .paste_database(
-                        client,
-                        &target_schema,
-                        &source_schema,
-                        &tables,
-                        with_data,
-                    )
+                    .paste_database(client, &target_schema, &source_schema, &tables, with_data)
                     .await
                 {
                     Ok(()) => {
-                        let _ = event_tx
-                            .send(PostgresEvent::Browser(BrowserEvent::PasteDatabaseDone));
+                        let _ =
+                            event_tx.send(PostgresEvent::Browser(BrowserEvent::PasteDatabaseDone));
                     }
                     Err(e) => {
                         let _ = event_tx.send(PostgresEvent::Error(e));
@@ -211,17 +197,15 @@ impl BrowserService {
                 }
             }
 
-            BrowserCommand::ExecuteSql { sql } => {
-                match self.execute_sql(client, &sql).await {
-                    Ok(result) => {
-                        let _ = event_tx
-                            .send(PostgresEvent::Browser(BrowserEvent::SqlExecuted { result }));
-                    }
-                    Err(e) => {
-                        let _ = event_tx.send(PostgresEvent::Error(e));
-                    }
+            BrowserCommand::ExecuteSql { sql } => match self.execute_sql(client, &sql).await {
+                Ok(result) => {
+                    let _ =
+                        event_tx.send(PostgresEvent::Browser(BrowserEvent::SqlExecuted { result }));
                 }
-            }
+                Err(e) => {
+                    let _ = event_tx.send(PostgresEvent::Error(e));
+                }
+            },
 
             BrowserCommand::LoadColumnsForEditor { schema, table } => {
                 match self.load_columns_for_editor(client, &schema, &table).await {
@@ -261,39 +245,21 @@ impl BrowserService {
     /// Create a new schema.
     async fn create_schema(&self, client: &Client, name: &str) -> Result<(), String> {
         let sql = format!("CREATE SCHEMA {}", quote_ident(name));
-        client
-            .execute(&sql, &[])
-            .await
-            .map_err(|e| e.to_string())?;
+        client.execute(&sql, &[]).await.map_err(|e| e.to_string())?;
         Ok(())
     }
 
     /// Drop an existing schema with CASCADE.
     async fn drop_schema(&self, client: &Client, name: &str) -> Result<(), String> {
         let sql = format!("DROP SCHEMA {} CASCADE", quote_ident(name));
-        client
-            .execute(&sql, &[])
-            .await
-            .map_err(|e| e.to_string())?;
+        client.execute(&sql, &[]).await.map_err(|e| e.to_string())?;
         Ok(())
     }
 
     /// Drop a table.
-    async fn drop_table(
-        &self,
-        client: &Client,
-        schema: &str,
-        table: &str,
-    ) -> Result<(), String> {
-        let sql = format!(
-            "DROP TABLE {}.{}",
-            quote_ident(schema),
-            quote_ident(table)
-        );
-        client
-            .execute(&sql, &[])
-            .await
-            .map_err(|e| e.to_string())?;
+    async fn drop_table(&self, client: &Client, schema: &str, table: &str) -> Result<(), String> {
+        let sql = format!("DROP TABLE {}.{}", quote_ident(schema), quote_ident(table));
+        client.execute(&sql, &[]).await.map_err(|e| e.to_string())?;
         Ok(())
     }
 
@@ -317,10 +283,7 @@ impl BrowserService {
             quote_ident(table),
             quote_ident(new_name)
         );
-        client
-            .execute(&sql, &[])
-            .await
-            .map_err(|e| e.to_string())?;
+        client.execute(&sql, &[]).await.map_err(|e| e.to_string())?;
         Ok(())
     }
 
@@ -491,10 +454,8 @@ impl BrowserService {
         with_data: bool,
     ) -> Result<(), String> {
         // Create target schema if it doesn't exist
-        let create_schema_sql = format!(
-            "CREATE SCHEMA IF NOT EXISTS {}",
-            quote_ident(target_schema)
-        );
+        let create_schema_sql =
+            format!("CREATE SCHEMA IF NOT EXISTS {}", quote_ident(target_schema));
         client
             .execute(&create_schema_sql, &[])
             .await
@@ -528,10 +489,7 @@ impl BrowserService {
 
     /// Execute raw SQL in browser context.
     async fn execute_sql(&self, client: &Client, sql: &str) -> Result<String, String> {
-        let results = client
-            .simple_query(sql)
-            .await
-            .map_err(|e| e.to_string())?;
+        let results = client.simple_query(sql).await.map_err(|e| e.to_string())?;
 
         let mut total_affected = 0u64;
         let mut stmt_count = 0usize;
@@ -686,8 +644,9 @@ impl BrowserService {
         Ok(rows
             .iter()
             .map(|row| {
-                let values: Vec<CellValue> =
-                    (0..row.columns().len()).map(|i| decode_value(row, i)).collect();
+                let values: Vec<CellValue> = (0..row.columns().len())
+                    .map(|i| decode_value(row, i))
+                    .collect();
                 Row { values }
             })
             .collect())

@@ -211,14 +211,16 @@ impl SchemaService {
             let update_rule: String = row.get(4);
             let delete_rule: String = row.get(5);
 
-            let entry = fk_map.entry(fk_name.clone()).or_insert_with(|| ForeignKeyInfo {
-                name: fk_name,
-                columns: Vec::new(),
-                referenced_table: ref_table,
-                referenced_columns: Vec::new(),
-                on_update: update_rule,
-                on_delete: delete_rule,
-            });
+            let entry = fk_map
+                .entry(fk_name.clone())
+                .or_insert_with(|| ForeignKeyInfo {
+                    name: fk_name,
+                    columns: Vec::new(),
+                    referenced_table: ref_table,
+                    referenced_columns: Vec::new(),
+                    on_update: update_rule,
+                    on_delete: delete_rule,
+                });
             entry.columns.push(col_name);
             entry.referenced_columns.push(ref_col);
         }
@@ -231,11 +233,7 @@ impl SchemaService {
     /// Builds DDL from column metadata, primary keys, and constraints.
     /// PostgreSQL does not have `SHOW CREATE TABLE`, so we generate it
     /// from information_schema data.
-    pub async fn show_create_table(
-        client: &Client,
-        schema: &str,
-        table: &str,
-    ) -> Result<String> {
+    pub async fn show_create_table(client: &Client, schema: &str, table: &str) -> Result<String> {
         let columns = Self::list_columns(client, schema, table).await?;
 
         let mut sql = format!(

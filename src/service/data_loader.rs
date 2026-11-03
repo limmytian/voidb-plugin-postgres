@@ -70,11 +70,7 @@ impl DataLoaderService {
     }
 
     /// Load the total row count for a table.
-    pub async fn load_row_count(
-        client: &Client,
-        schema: &str,
-        table: &str,
-    ) -> Result<i64> {
+    pub async fn load_row_count(client: &Client, schema: &str, table: &str) -> Result<i64> {
         let qualified_table = format!("{}.{}", quote_ident(schema), quote_ident(table));
         let sql = format!("SELECT COUNT(*) FROM {}", qualified_table);
         let row = client.query_one(&sql, &[]).await?;

@@ -2,15 +2,15 @@
 ///
 /// Implements ConnectionDataProvider and ConnectionDisplayProvider traits
 /// for PostgreSQL plugin to provide connection metadata and display configuration.
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::collections::HashMap;
 
 use voidb_core::connection::ConnectionConfig;
 use voidb_core::plugin::{
-    ConnectionDataProvider, ConnectionDisplayProvider, ConnectionSummary, DisplayLayout,
-    ColumnDefinition, ColumnWidth, ColumnFormat, Alignment, Badge, BadgeStyle,
-    FieldDefinition, FieldType, ValidationRule, QuickAction, DisplayConfig,
-    ViewMode, DefaultColumn, SortOption, FilterOption,
+    Alignment, Badge, BadgeStyle, ColumnDefinition, ColumnFormat, ColumnWidth,
+    ConnectionDataProvider, ConnectionDisplayProvider, ConnectionSummary, DefaultColumn,
+    DisplayConfig, DisplayLayout, FieldDefinition, FieldType, FilterOption, QuickAction,
+    SortOption, ValidationRule, ViewMode,
 };
 
 /// PostgreSQL plugin connection data provider
@@ -36,7 +36,8 @@ impl ConnectionDataProvider for PostgresConnectionProvider {
     fn get_connection_summary(&self, config: &ConnectionConfig) -> ConnectionSummary {
         use crate::config::PostgresConfig;
 
-        let pg_config: PostgresConfig = config.plugin_config
+        let pg_config: PostgresConfig = config
+            .plugin_config
             .as_ref()
             .and_then(|pc| serde_json::from_value(pc.clone()).ok())
             .unwrap_or_default();
@@ -193,16 +194,14 @@ impl ConnectionDisplayProvider for PostgresConnectionProvider {
                 DefaultColumn::User,
                 DefaultColumn::LastUsed,
             ],
-            custom_columns: vec![
-                ColumnDefinition {
-                    id: "ssl".to_string(),
-                    label: "SSL".to_string(),
-                    value: String::new(),
-                    width: ColumnWidth::Fixed(5),
-                    alignment: Alignment::Center,
-                    format: ColumnFormat::Badge,
-                },
-            ],
+            custom_columns: vec![ColumnDefinition {
+                id: "ssl".to_string(),
+                label: "SSL".to_string(),
+                value: String::new(),
+                width: ColumnWidth::Fixed(5),
+                alignment: Alignment::Center,
+                format: ColumnFormat::Badge,
+            }],
             sort_options: vec![
                 SortOption::Name,
                 SortOption::LastUsed,
@@ -264,11 +263,31 @@ mod tests {
     fn test_validate_custom_field() {
         let provider = PostgresConnectionProvider::new();
 
-        assert!(provider.validate_custom_field("ssl_mode", &json!("require")).is_ok());
-        assert!(provider.validate_custom_field("ssl_mode", &json!("invalid")).is_err());
-        assert!(provider.validate_custom_field("connect_timeout", &json!(10)).is_ok());
-        assert!(provider.validate_custom_field("connect_timeout", &json!(500)).is_err());
-        assert!(provider.validate_custom_field("connect_timeout", &json!(0)).is_err());
+        assert!(
+            provider
+                .validate_custom_field("ssl_mode", &json!("require"))
+                .is_ok()
+        );
+        assert!(
+            provider
+                .validate_custom_field("ssl_mode", &json!("invalid"))
+                .is_err()
+        );
+        assert!(
+            provider
+                .validate_custom_field("connect_timeout", &json!(10))
+                .is_ok()
+        );
+        assert!(
+            provider
+                .validate_custom_field("connect_timeout", &json!(500))
+                .is_err()
+        );
+        assert!(
+            provider
+                .validate_custom_field("connect_timeout", &json!(0))
+                .is_err()
+        );
     }
 
     #[test]

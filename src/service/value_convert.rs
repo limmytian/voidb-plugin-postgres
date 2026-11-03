@@ -310,10 +310,7 @@ mod tests {
 
     #[test]
     fn test_escape_pg_value_text_with_quotes() {
-        assert_eq!(
-            escape_pg_value(&CellValue::Text("it's".into())),
-            "'it''s'"
-        );
+        assert_eq!(escape_pg_value(&CellValue::Text("it's".into())), "'it''s'");
     }
 
     #[test]
