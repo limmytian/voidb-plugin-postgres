@@ -13,7 +13,7 @@ path = "src/main.rs"
 
 [dependencies]
 voidb-process-plugin-sdk = { git = "https://github.com/limmytian/voidb.git", rev = "95880c66ac7cfa71b33ad241f5fe4890130ab65a" }
-voidb-core = { git = "https://github.com/limmytian/voidb.git", rev = "95880c66ac7cfa71b33ad241f5fe4890130ab65a", default-features = false }
+voidb-core = { git = "https://github.com/limmytian/voidb.git", rev = "95880c66ac7cfa71b33ad241f5fe4890130ab65a" }
 tokio-postgres = { version = "0.7", features = ["with-chrono-0_4", "with-serde_json-1", "with-uuid-1"] }
 postgres-native-tls = "0.5"
 native-tls = "0.2"
