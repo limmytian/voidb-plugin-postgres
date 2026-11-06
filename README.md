@@ -16,16 +16,16 @@ Independent process plugin for [VoidB](https://github.com/limmytian/voidb) to co
 
 ```bash
 # Connectivity test
-voidb-cli postgres test --profile my-postgres
+vb postgres test --profile my-postgres
 
 # Run SQL queries and catalog exploration
-voidb-cli postgres databases --profile my-postgres
-voidb-cli postgres tables --database mydb --profile my-postgres
-voidb-cli postgres describe users --database mydb --profile my-postgres
-voidb-cli postgres query "SELECT * FROM users LIMIT 10;" --database mydb --profile my-postgres
+vb postgres databases --profile my-postgres
+vb postgres tables --database mydb --profile my-postgres
+vb postgres describe users --database mydb --profile my-postgres
+vb postgres query "SELECT * FROM users LIMIT 10;" --database mydb --profile my-postgres
 
 # Machine / Agent stdio-jsonrpc server
-voidb-cli postgres serve
+vb postgres serve
 ```
 
 ## Optional local SDK development
