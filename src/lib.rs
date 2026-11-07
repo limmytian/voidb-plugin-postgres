@@ -607,7 +607,7 @@ impl DatabaseAdapter for PostgresAdapter {
     }
 
     fn quote_identifier(&self, name: &str) -> String {
-        format!("\"{}\"", name.replace('"', "\"\""))
+        crate::service::value_convert::quote_ident(name)
     }
 }
 

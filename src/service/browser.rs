@@ -693,3 +693,44 @@ fn generate_create_table(schema: &TableSchema, schema_name: &str) -> String {
     sql.push_str("\n)");
     sql
 }
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A schema whose names contain double quotes must produce fully
+    /// escaped DDL: embedded quotes doubled, quoting never broken open.
+    #[test]
+    fn test_generate_create_table_nasty_identifiers() {
+        let schema = TableSchema {
+            database: "public".into(),
+            table_name: "we\"ird`table".into(),
+            columns: vec![ColumnInfo {
+                name: "we\"ird`col".into(),
+                data_type: "integer".into(),
+                nullable: false,
+                is_primary_key: true,
+                default_value: None,
+                max_length: None,
+                extra: String::new(),
+            }],
+            indexes: Vec::new(),
+            foreign_keys: Vec::new(),
+            engine: None,
+            comment: None,
+        };
+
+        let sql = generate_create_table(&schema, "we\"ird`schema");
+
+        assert_eq!(
+            sql,
+            "CREATE TABLE \"we\"\"ird`schema\".\"we\"\"ird`table\" (\n  \
+             \"we\"\"ird`col\" integer NOT NULL,\n  \
+             PRIMARY KEY (\"we\"\"ird`col\")\n)"
+        );
+    }
+}

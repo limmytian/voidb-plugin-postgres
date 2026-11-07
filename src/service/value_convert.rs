@@ -341,6 +341,18 @@ mod tests {
         assert_eq!(quote_ident("my\"table"), "\"my\"\"table\"");
     }
 
+    #[test]
+    fn test_quote_ident_empty() {
+        assert_eq!(quote_ident(""), "\"\"");
+    }
+
+    #[test]
+    fn test_quote_ident_with_multiple_embedded_quotes() {
+        // Doubling must fully contain the identifier: no bare double quote
+        // that could close the quoting early.
+        assert_eq!(quote_ident("weird\"\"name"), "\"weird\"\"\"\"name\"");
+    }
+
     // === build_pk_where tests ===
 
     #[test]
@@ -424,5 +436,24 @@ mod tests {
         };
         let result = build_pk_where(&columns, &row, &[]);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_build_pk_where_nasty_identifier() {
+        // A PK name containing a double quote must not break out of the quoting.
+        let columns = vec![ColumnInfo {
+            name: "weird\"name".into(),
+            data_type: "INT".into(),
+            nullable: false,
+            is_primary_key: true,
+            default_value: None,
+            max_length: None,
+            extra: String::new(),
+        }];
+        let row = Row {
+            values: vec![CellValue::Int(42)],
+        };
+        let result = build_pk_where(&columns, &row, &["weird\"name".into()]).unwrap();
+        assert_eq!(result, "\"weird\"\"name\" = 42");
     }
 }
